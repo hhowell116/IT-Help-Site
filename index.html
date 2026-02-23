@@ -22,159 +22,188 @@
     </div>
   </div>
 
-  <!-- HEADER -->
-  <header>
-    <div class="logo">
-      <img src="logo.png" alt="Rowe Casa Organics" class="logo-img" />
-      IT Portal <span>/ Surveys & Forms</span>
-    </div>
-    <div class="header-right">
-      <button class="login-btn" onclick="showLock()">🔑 Sign In</button>
-    </div>
-  </header>
+  <!-- APP SHELL -->
+  <div class="app-shell">
 
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-badge">🏢 Internal Use Only</div>
-    <h1>IT Surveys &<br/><span>Internal Forms</span></h1>
-    <p>A central hub for all IT-related surveys and request forms. Complete your assigned surveys or submit a request below.</p>
-    <div class="stats">
-      <div class="stat">
-        <span class="stat-num">3</span>
-        <span class="stat-label">Active Surveys</span>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <!-- Logo -->
+      <div class="sidebar-logo-wrap">
+        <img src="logo.png" alt="Rowe Casa Organics" class="sidebar-logo" />
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-num">3</span>
-        <span class="stat-label">Available Forms</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-num">0</span>
-        <span class="stat-label">Completed by You</span>
-      </div>
-    </div>
-  </section>
 
-  <!-- SURVEYS -->
-  <div class="section-header">
-    <h2>📋 Surveys</h2>
-    <span>Sign in to submit responses</span>
+      <div class="sidebar-divider"></div>
+
+      <!-- Nav -->
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" onclick="showSection('surveys', this)">
+          <span class="nav-icon">📋</span> Surveys
+        </button>
+        <button class="nav-btn" onclick="showSection('forms', this)">
+          <span class="nav-icon">📝</span> Request Forms
+        </button>
+        <button class="nav-btn" onclick="showSection('completed', this)">
+          <span class="nav-icon">✅</span> My Completed
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-divider"></div>
+        <div class="portal-label">IT Portal</div>
+        <div class="portal-sub">@rowecasaorganics.com</div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrap">
+
+      <!-- TOP BAR -->
+      <header class="topbar">
+        <div class="topbar-title" id="topbarTitle">Surveys</div>
+        <div class="topbar-right">
+          <span class="topbar-user" id="topbarUser">Not signed in</span>
+          <button class="sign-btn" id="authBtn" onclick="showLock()">Sign In</button>
+        </div>
+      </header>
+
+      <!-- CONTENT PANEL -->
+      <main class="content-panel">
+
+        <!-- SURVEYS SECTION -->
+        <section class="section active" id="section-surveys">
+          <div class="section-intro">
+            <h2>IT Surveys</h2>
+            <p>Complete your assigned surveys to help our team manage technology across the organization.</p>
+          </div>
+          <div class="cards">
+
+            <div class="card brown">
+              <div class="card-top">
+                <div class="card-icon brown">📦</div>
+                <span class="card-status status-active">Active</span>
+              </div>
+              <h3>Technology & Application Discovery Survey</h3>
+              <p>Help us build a complete inventory of every tool, app, SaaS platform, and account used across your department. For team leads and managers.</p>
+              <div class="card-meta">
+                <div class="card-meta-left">
+                  <span class="meta-label">Est. completion time</span>
+                  <span class="meta-value">10 – 15 mins</span>
+                </div>
+                <button class="card-action" onclick="showLock()">Start →</button>
+              </div>
+            </div>
+
+            <div class="card green">
+              <div class="card-top">
+                <div class="card-icon green">🔐</div>
+                <span class="card-status status-draft">Draft</span>
+              </div>
+              <h3>Access & Permissions Audit</h3>
+              <p>Review and confirm the access levels and permissions your team members currently hold across key systems and platforms.</p>
+              <div class="card-meta">
+                <div class="card-meta-left">
+                  <span class="meta-label">Est. completion time</span>
+                  <span class="meta-value">5 – 10 mins</span>
+                </div>
+                <button class="card-action disabled">Coming Soon</button>
+              </div>
+            </div>
+
+            <div class="card yellow">
+              <div class="card-top">
+                <div class="card-icon yellow">🖥️</div>
+                <span class="card-status status-draft">Draft</span>
+              </div>
+              <h3>Hardware & Device Inventory</h3>
+              <p>Submit a record of all company-owned or personal devices used to access company systems, including laptops, phones, and peripherals.</p>
+              <div class="card-meta">
+                <div class="card-meta-left">
+                  <span class="meta-label">Est. completion time</span>
+                  <span class="meta-value">5 mins</span>
+                </div>
+                <button class="card-action disabled">Coming Soon</button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- FORMS SECTION -->
+        <section class="section" id="section-forms">
+          <div class="section-intro">
+            <h2>Request Forms</h2>
+            <p>Submit IT requests for new employees, departing staff, or equipment and software needs.</p>
+          </div>
+          <div class="cards">
+
+            <div class="card green">
+              <div class="card-top">
+                <div class="card-icon green">🧑‍💼</div>
+                <span class="card-status status-active">Active</span>
+              </div>
+              <h3>User Onboarding Request</h3>
+              <p>Submit everything IT needs to provision a new employee — role, system access, devices, and software requirements.</p>
+              <div class="card-meta">
+                <div class="card-meta-left">
+                  <span class="meta-label">Submitted to</span>
+                  <span class="meta-value">IT Department</span>
+                </div>
+                <button class="card-action" onclick="showLock()">Submit →</button>
+              </div>
+            </div>
+
+            <div class="card yellow">
+              <div class="card-top">
+                <div class="card-icon yellow">🚪</div>
+                <span class="card-status status-active">Active</span>
+              </div>
+              <h3>User Offboarding Request</h3>
+              <p>Capture separation details for a departing employee — access revocation, email handling, file transfer, and device return.</p>
+              <div class="card-meta">
+                <div class="card-meta-left">
+                  <span class="meta-label">Submitted to</span>
+                  <span class="meta-value">IT Department</span>
+                </div>
+                <button class="card-action" onclick="showLock()">Submit →</button>
+              </div>
+            </div>
+
+            <div class="card brown">
+              <div class="card-top">
+                <div class="card-icon brown">🛠️</div>
+                <span class="card-status status-active">Active</span>
+              </div>
+              <h3>IT Equipment & Software Request</h3>
+              <p>Request any technology need — hardware, software, or licenses — with business justification and manager approval workflow.</p>
+              <div class="card-meta">
+                <div class="card-meta-left">
+                  <span class="meta-label">Submitted to</span>
+                  <span class="meta-value">IT Department</span>
+                </div>
+                <button class="card-action" onclick="showLock()">Submit →</button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- COMPLETED SECTION -->
+        <section class="section" id="section-completed">
+          <div class="section-intro">
+            <h2>My Completed Submissions</h2>
+            <p>A record of all surveys and forms you have submitted.</p>
+          </div>
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h3>No submissions yet</h3>
+            <p>Once you sign in and complete a survey or form, your submissions will appear here.</p>
+            <button class="card-action" onclick="showLock()">Sign In to View</button>
+          </div>
+        </section>
+
+      </main>
+    </div>
   </div>
-
-  <div class="cards">
-
-    <div class="card brown">
-      <div class="card-top">
-        <div class="card-icon brown">📦</div>
-        <span class="card-status status-active">Active</span>
-      </div>
-      <h3>Technology & Application Discovery Survey</h3>
-      <p>Help us build a complete inventory of every tool, app, SaaS platform, and account used across your department. For team leads and managers.</p>
-      <div class="card-meta">
-        <div class="card-meta-left">
-          <span class="meta-label">Est. completion time</span>
-          <span class="meta-value">10 – 15 mins</span>
-        </div>
-        <button class="card-action" onclick="showLock()">Start →</button>
-      </div>
-    </div>
-
-    <div class="card green">
-      <div class="card-top">
-        <div class="card-icon green">🔐</div>
-        <span class="card-status status-draft">Draft</span>
-      </div>
-      <h3>Access & Permissions Audit</h3>
-      <p>Review and confirm the access levels and permissions your team members currently hold across key systems and platforms.</p>
-      <div class="card-meta">
-        <div class="card-meta-left">
-          <span class="meta-label">Est. completion time</span>
-          <span class="meta-value">5 – 10 mins</span>
-        </div>
-        <button class="card-action disabled">Coming Soon</button>
-      </div>
-    </div>
-
-    <div class="card yellow">
-      <div class="card-top">
-        <div class="card-icon yellow">🖥️</div>
-        <span class="card-status status-draft">Draft</span>
-      </div>
-      <h3>Hardware & Device Inventory</h3>
-      <p>Submit a record of all company-owned or personal devices used to access company systems, including laptops, phones, and peripherals.</p>
-      <div class="card-meta">
-        <div class="card-meta-left">
-          <span class="meta-label">Est. completion time</span>
-          <span class="meta-value">5 mins</span>
-        </div>
-        <button class="card-action disabled">Coming Soon</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- FORMS -->
-  <div class="section-header">
-    <h2>📝 Request Forms</h2>
-    <span>Sign in to submit a request</span>
-  </div>
-
-  <div class="cards cards-bottom">
-
-    <div class="card green">
-      <div class="card-top">
-        <div class="card-icon green">🧑‍💼</div>
-        <span class="card-status status-active">Active</span>
-      </div>
-      <h3>User Onboarding Request</h3>
-      <p>Submit everything IT needs to provision a new employee — role, system access, devices, and software requirements.</p>
-      <div class="card-meta">
-        <div class="card-meta-left">
-          <span class="meta-label">Submitted to</span>
-          <span class="meta-value">IT Department</span>
-        </div>
-        <button class="card-action" onclick="showLock()">Submit →</button>
-      </div>
-    </div>
-
-    <div class="card yellow">
-      <div class="card-top">
-        <div class="card-icon yellow">🚪</div>
-        <span class="card-status status-active">Active</span>
-      </div>
-      <h3>User Offboarding Request</h3>
-      <p>Capture separation details for a departing employee — access revocation, email handling, file transfer, and device return.</p>
-      <div class="card-meta">
-        <div class="card-meta-left">
-          <span class="meta-label">Submitted to</span>
-          <span class="meta-value">IT Department</span>
-        </div>
-        <button class="card-action" onclick="showLock()">Submit →</button>
-      </div>
-    </div>
-
-    <div class="card brown">
-      <div class="card-top">
-        <div class="card-icon brown">🛠️</div>
-        <span class="card-status status-active">Active</span>
-      </div>
-      <h3>IT Equipment & Software Request</h3>
-      <p>Request any technology need — hardware, software, or licenses — with business justification and manager approval workflow.</p>
-      <div class="card-meta">
-        <div class="card-meta-left">
-          <span class="meta-label">Submitted to</span>
-          <span class="meta-value">IT Department</span>
-        </div>
-        <button class="card-action" onclick="showLock()">Submit →</button>
-      </div>
-    </div>
-
-  </div>
-
-  <footer>
-    IT Portal — Internal Use Only &nbsp;·&nbsp; @rowecasaorganics.com accounts only &nbsp;·&nbsp; Powered by GitHub Pages
-  </footer>
 
   <script>
     function showLock() {
@@ -182,6 +211,19 @@
     }
     function dismissLock() {
       document.getElementById('lockOverlay').style.display = 'none';
+    }
+
+    function showSection(name, btn) {
+      // Hide all sections
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      // Deactivate all nav buttons
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      // Show target
+      document.getElementById('section-' + name).classList.add('active');
+      btn.classList.add('active');
+      // Update topbar title
+      const titles = { surveys: 'Surveys', forms: 'Request Forms', completed: 'My Completed' };
+      document.getElementById('topbarTitle').textContent = titles[name];
     }
   </script>
 
