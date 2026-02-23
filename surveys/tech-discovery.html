@@ -101,6 +101,15 @@
         });
       }
 
+      // ── DEBUG — remove once working ──
+      console.log('=== saveSubmission debug ===');
+      console.log('_currentUser:', window._currentUser);
+      console.log('uid:', window._currentUser?.uid);
+      console.log('email:', window._currentUser?.email);
+      console.log('data being written:', data);
+      console.log('db instance:', db);
+      // ── END DEBUG ──
+
       if (!window._currentUser) {
         console.error('saveSubmission: no authenticated user');
         return false;
@@ -109,8 +118,8 @@
       try {
         await addDoc(collection(db, 'submissions'), {
           ...data,
-          uid:         window._currentUser.uid,        // used by Firestore rules
-          userEmail:   window._currentUser.email,      // used for display only
+          uid:         window._currentUser.uid,
+          userEmail:   window._currentUser.email,
           submittedAt: serverTimestamp(),
         });
         console.log('Firestore submission saved for', window._currentUser.email);
