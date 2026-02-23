@@ -109,7 +109,8 @@
       try {
         await addDoc(collection(db, 'submissions'), {
           ...data,
-          userEmail:   window._currentUser.email,
+          uid:         window._currentUser.uid,        // used by Firestore rules
+          userEmail:   window._currentUser.email,      // used for display only
           submittedAt: serverTimestamp(),
         });
         console.log('Firestore submission saved for', window._currentUser.email);
