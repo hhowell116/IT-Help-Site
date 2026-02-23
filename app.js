@@ -49,7 +49,45 @@ window.showSection = function(name, btn) {
   document.querySelectorAll('.nav-btn, .contact-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('section-' + name)?.classList.add('active');
   if (btn) btn.classList.add('active');
+  if (name === 'completed') renderCompleted();
 };
+
+// ── Completed submissions ─────────────────────────────────────
+function loadSubmissions() {
+  try { return JSON.parse(localStorage.getItem('rco_submissions') || '[]'); }
+  catch { return []; }
+}
+
+function renderCompleted() {
+  const list = document.getElementById('completedList');
+  if (!list) return;
+  const submissions = loadSubmissions();
+
+  if (submissions.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3>No submissions yet</h3>
+      <p>Complete a survey or form and your submissions will appear here.</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = submissions.map((s, i) => `
+    <div class="card brown completed-card">
+      <div class="card-top">
+        <span class="card-status status-active">Submitted</span>
+      </div>
+      <h3>${s.title}</h3>
+      <p style="font-size:0.82rem">
+        <strong>Department:</strong> ${s.dept || '—'}<br/>
+        <strong>Submitted:</strong> ${s.date}<br/>
+        <strong>By:</strong> ${s.email || '—'}
+      </p>
+      <div class="card-meta">
+        <button class="card-action" onclick="window.location.href='${s.url}'">Take Again →</button>
+      </div>
+    </div>`).join('');
+}
 
 // ── Contact form — opens Gmail compose with fields pre-filled ─
 const sendBtn  = document.getElementById('sendBtn');
