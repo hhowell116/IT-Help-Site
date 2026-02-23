@@ -1,477 +1,169 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Technology & Application Discovery Survey — RCO IT</title>
-  <link rel="stylesheet" href="../styles.css"/>
-</head>
-<body>
+// ============================================================
+//  app.js — RCO IT Help Site
+//  Handles: Firebase auth, Firestore submissions, nav, contact
+// ============================================================
 
-  <div class="app-shell">
+import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, onAuthStateChanged, signOut }   from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, collection, addDoc, query,
+         where, orderBy, getDocs }                from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="sidebar-logo-wrap">
-        <img src="../logo.png" alt="Rowe Casa Organics" class="sidebar-logo"/>
-      </div>
-      <div class="sidebar-divider"></div>
-      <nav class="sidebar-nav" id="stepNav"></nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-divider"></div>
-        <button class="contact-btn" onclick="window.location.href='../index.html'">
-          ← Back to Portal
-        </button>
-        <div class="portal-label">RCO IT Help Site</div>
-        <div class="portal-sub">@rowecasaorganics.com</div>
-      </div>
-    </aside>
+// ── Config ───────────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyDEn7ooJJ1zATM5oEnx3ByDiOFTFxr_JiA",
+  authDomain:        "rco-metrics-d0f3b.firebaseapp.com",
+  projectId:         "rco-metrics-d0f3b",
+  storageBucket:     "rco-metrics-d0f3b.firebasestorage.app",
+  messagingSenderId: "1021645263850",
+  appId:             "1:1021645263850:web:dfd5c7cd0bd99762679893",
+  measurementId:     "G-DR5MLDL5BG"
+};
 
-    <!-- MAIN WRAP -->
-    <div class="main-wrap">
-      <header class="topbar">
-        <div class="topbar-left">
-          <div class="topbar-title">Technology & Application Discovery Survey</div>
-          <div class="topbar-desc">List all tools and accounts your team uses — one submission covers everything.</div>
+const ALLOWED_DOMAIN = '@rowecasaorganics.com';
+
+// ── Init ─────────────────────────────────────────────────────
+const app  = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+let currentUser = null;
+
+// ── Auth guard ───────────────────────────────────────────────
+onAuthStateChanged(auth, user => {
+  if (!user || !user.email.endsWith(ALLOWED_DOMAIN)) {
+    signOut(auth).finally(() => window.location.replace('login.html'));
+    return;
+  }
+  currentUser = user;
+  const userEl = document.getElementById('topbarUser');
+  if (userEl) userEl.textContent = user.email;
+});
+
+// ── Sign out ─────────────────────────────────────────────────
+const authBtn = document.getElementById('authBtn');
+if (authBtn) {
+  authBtn.addEventListener('click', () => {
+    signOut(auth).then(() => window.location.replace('login.html'));
+  });
+}
+
+// ── Section nav ──────────────────────────────────────────────
+window.showSection = function(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn, .contact-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + name)?.classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'completed') renderCompleted();
+};
+
+// ── Completed submissions (Firestore) ────────────────────────
+async function renderCompleted() {
+  const list = document.getElementById('completedList');
+  if (!list) return;
+
+  list.innerHTML = `<div class="empty-state"><div class="login-spinner" style="margin:2rem auto"></div><p>Loading your submissions...</p></div>`;
+
+  try {
+    const q = query(
+      collection(db, 'submissions'),
+      where('userEmail', '==', currentUser?.email || ''),
+      orderBy('submittedAt', 'desc')
+    );
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>No submissions yet</h3>
+        <p>Complete a survey or form and your submissions will appear here.</p>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = `<div class="cards">` + snap.docs.map(doc => {
+      const s = doc.data();
+      const date = s.submittedAt?.toDate
+        ? s.submittedAt.toDate().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+        : s.submittedAt || '—';
+      return `<div class="card brown completed-card">
+        <div class="card-top">
+          <span class="card-status status-active">Submitted</span>
         </div>
-        <div class="topbar-right">
-          <div class="survey-progress-wrap">
-            <div class="survey-progress-label">Step <span id="progressCurrent">1</span> of <span id="progressTotal">—</span></div>
-            <div class="survey-progress-bar"><div class="survey-progress-fill" id="progressFill"></div></div>
-          </div>
+        <h3>${s.title || 'Survey'}</h3>
+        <p style="font-size:0.82rem;line-height:1.7">
+          <strong>Department:</strong> ${s.dept || '—'}<br/>
+          <strong>Submitted:</strong> ${date}<br/>
+          <strong>By:</strong> ${s.userEmail || '—'}
+        </p>
+        <div class="card-meta">
+          <button class="card-action" onclick="window.location.href='${s.url}'">Take Again →</button>
         </div>
-      </header>
+      </div>`;
+    }).join('') + `</div>`;
 
-      <main class="content-panel">
-        <div id="surveyBody"></div>
-        <div class="survey-nav">
-          <button class="clear-btn" id="prevBtn" onclick="surveyNav(-1)">← Previous</button>
-          <button class="card-action" id="nextBtn" onclick="surveyNav(1)">Next →</button>
-        </div>
-      </main>
-    </div>
-  </div>
+  } catch(err) {
+    console.error('Firestore error:', err);
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">⚠️</div>
+      <h3>Could not load submissions</h3>
+      <p>Please refresh the page and try again.</p>
+    </div>`;
+  }
+}
 
-  <script>
-    const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxeP-Asvk9kgGx_oz4jMWYOBldaPLM8Tm6S2XfXOfDRat-3KX1UfVXYzEju2Dc7nDwBGg/exec';
-  </script>
-
-  <!-- Firebase — saves submission to Firestore for My Completed tab -->
-  <script type="module">
-    import { initializeApp }                    from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getAuth, onAuthStateChanged }      from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-    import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-
-    const FIREBASE_CONFIG = {
-      apiKey:            "AIzaSyDEn7ooJJ1zATM5oEnx3ByDiOFTFxr_JiA",
-      authDomain:        "rco-metrics-d0f3b.firebaseapp.com",
-      projectId:         "rco-metrics-d0f3b",
-      storageBucket:     "rco-metrics-d0f3b.firebasestorage.app",
-      messagingSenderId: "1021645263850",
-      appId:             "1:1021645263850:web:dfd5c7cd0bd99762679893",
-      measurementId:     "G-DR5MLDL5BG"
-    };
-
-    const app  = initializeApp(FIREBASE_CONFIG);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
-
-    // Expose current user to the main script
-    onAuthStateChanged(auth, user => {
-      window._currentUser = user || null;
+// ── Save submission to Firestore (called from survey pages) ──
+window.saveSubmission = async function(data) {
+  try {
+    await addDoc(collection(db, 'submissions'), {
+      ...data,
+      userEmail:   currentUser?.email || '',
+      submittedAt: new Date(),
     });
+    return true;
+  } catch(err) {
+    console.error('Failed to save submission:', err);
+    return false;
+  }
+};
 
-    // Expose saveSubmission globally so the main script can call it
-    window.saveSubmission = async function(data) {
-      try {
-        await addDoc(collection(db, 'submissions'), {
-          ...data,
-          userEmail:   window._currentUser?.email || '',
-          submittedAt: new Date(),
-        });
-        return true;
-      } catch(err) {
-        console.error('Firestore save failed:', err);
-        return false;
-      }
-    };
-  </script>
+// ── Contact form ─────────────────────────────────────────────
+const sendBtn  = document.getElementById('sendBtn');
+const clearBtn = document.getElementById('clearBtn');
 
-  <script>
+if (sendBtn) {
+  sendBtn.addEventListener('click', () => {
+    const from    = document.getElementById('contactFrom')?.value.trim();
+    const subject = document.getElementById('contactSubject')?.value.trim();
+    const body    = document.getElementById('contactBody')?.value.trim();
 
-    // ── Departments from org chart + their relevant tool sections ──
-    const DEPARTMENTS = [
-      'Administration',
-      'Brand Experience',
-      'Curing',
-      'Customer Care',
-      'Customer Service',
-      'Facilities and Maintenance',
-      'Finance',
-      'Human Resources',
-      'Information Technology',
-      'Inventory',
-      'Kitchen',
-      'Labeling',
-      'Marketing',
-      'Operations',
-      'Procurement',
-      'Production',
-      'Project Management',
-      'Quality Control',
-      'Research & Development',
-      'Shipping',
-      'Social Media',
-      'Strategy',
-      'Wholesale',
-    ];
+    if (!from)    { setContactStatus('error', 'Please enter your email address.'); return; }
+    if (!subject) { setContactStatus('error', 'Please enter a subject.'); return; }
+    if (!body)    { setContactStatus('error', 'Please enter a message.'); return; }
 
-    // Which tool sections are relevant per department
-    const DEPT_SECTIONS = {
-      'Administration':          ['comm','prod','pm','finance','hr','other'],
-      'Brand Experience':        ['comm','prod','pm','marketing','design','other'],
-      'Curing':                  ['comm','prod','ops','other'],
-      'Customer Care':           ['comm','prod','pm','crm','other'],
-      'Customer Service':        ['comm','prod','pm','crm','other'],
-      'Facilities and Maintenance': ['comm','prod','ops','other'],
-      'Finance':                 ['comm','prod','pm','finance','other'],
-      'Human Resources':         ['comm','prod','pm','hr','other'],
-      'Information Technology':  ['comm','prod','pm','it','ops','other'],
-      'Inventory':               ['comm','prod','ops','other'],
-      'Kitchen':                 ['comm','prod','ops','other'],
-      'Labeling':                ['comm','prod','ops','other'],
-      'Marketing':               ['comm','prod','pm','marketing','design','other'],
-      'Operations':              ['comm','prod','pm','ops','finance','other'],
-      'Procurement':             ['comm','prod','pm','finance','ops','other'],
-      'Production':              ['comm','prod','pm','ops','other'],
-      'Project Management':      ['comm','prod','pm','other'],
-      'Quality Control':         ['comm','prod','ops','other'],
-      'Research & Development':  ['comm','prod','pm','design','other'],
-      'Shipping':                ['comm','prod','ops','other'],
-      'Social Media':            ['comm','prod','marketing','design','other'],
-      'Strategy':                ['comm','prod','pm','finance','other'],
-      'Wholesale':               ['comm','prod','pm','crm','finance','other'],
-    };
+    const fullBody = `From: ${from}\n\n${body}`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1`
+      + `&to=${encodeURIComponent('itsupport@rowecasaorganics.com')}`
+      + `&su=${encodeURIComponent(subject)}`
+      + `&body=${encodeURIComponent(fullBody)}`;
 
-    // ── All possible tool sections with tailored examples ──────────
-    const ALL_TOOL_SECTIONS = {
-      comm: {
-        title: 'Communication Tools',
-        examples: 'Email clients, messaging platforms, video conferencing, VoIP — e.g. Gmail, Slack, Microsoft Teams'
-      },
-      prod: {
-        title: 'Productivity & Collaboration Tools',
-        examples: 'Document creation, file storage, cloud drives, office suites, note-taking — e.g. Google Workspace, Microsoft 365, Notion, Dropbox'
-      },
-      pm: {
-        title: 'Project Management Tools',
-        examples: 'Task tracking, project planning, ticketing systems, workflow management — e.g. Asana, Monday.com'
-      },
-      hr: {
-        title: 'HR & People Management Tools',
-        examples: 'HRIS, payroll, recruiting/ATS, performance management, onboarding, org chart tools — e.g. BambooHR, ADP'
-      },
-      finance: {
-        title: 'Finance & Accounting Tools',
-        examples: 'Accounting software, invoicing, expense management, budgeting, billing — e.g. QuickBooks, Expensify'
-      },
-      crm: {
-        title: 'Sales & CRM Tools',
-        examples: 'CRM platforms, sales enablement, lead generation, proposal tools, e-signature — e.g. Salesforce, HubSpot'
-      },
-      marketing: {
-        title: 'Marketing Tools',
-        examples: 'Email marketing, social media management, analytics, SEO, content creation, ad platforms — e.g. Mailchimp, Hootsuite'
-      },
-      it: {
-        title: 'IT & Security Tools',
-        examples: 'Password managers, VPN, antivirus, MDM, monitoring, identity/access management, backup — e.g. Okta, CrowdStrike'
-      },
-      design: {
-        title: 'Design & Creative Tools',
-        examples: 'Graphic design, video editing, photo editing, prototyping, presentation design — e.g. Adobe Creative Cloud, Canva'
-      },
-      ops: {
-        title: 'Operations & Industry-Specific Tools',
-        examples: 'ERP, inventory, logistics, shipping, scheduling, field service, compliance — e.g. ShipStation, ZebraDesigner'
-      },
-      other: {
-        title: 'Any Other Tools',
-        examples: 'Anything not covered above — free tools, browser extensions, or anything downloaded directly to your computer'
-      },
-    };
+    window.open(gmailUrl, '_blank');
+    setContactStatus('success', '✅ Gmail opened with your message ready to send!');
+  });
+}
 
-    // ── Build active section list based on selected department ──────
-    let currentStep = 0;
-    let surveyData  = {};
-    let activeSections = []; // built after dept is selected
+if (clearBtn) clearBtn.addEventListener('click', clearContactForm);
 
-    function buildSections(dept) {
-      const toolIds = DEPT_SECTIONS[dept] || ['comm','prod','pm','other'];
-      const sections = [{ id: 'info', title: 'Your Information', type: 'info' }];
-      toolIds.forEach(id => {
-        sections.push({ id, title: ALL_TOOL_SECTIONS[id].title, type: 'tools', examples: ALL_TOOL_SECTIONS[id].examples });
-      });
-      sections.push(
-        { id: 'comments', title: 'Additional Comments', type: 'comments' },
-        { id: 'review',   title: 'Review & Submit',     type: 'review'   }
-      );
-      return sections;
-    }
+function clearContactForm() {
+  ['contactFrom','contactSubject','contactBody'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  setContactStatus('', '');
+}
 
-    // ── Sidebar step nav ────────────────────────────────────────────
-    function buildStepNav() {
-      const nav = document.getElementById('stepNav');
-      nav.innerHTML = '';
-      activeSections.forEach((s, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'nav-btn step-nav-btn' + (i === currentStep ? ' active' : '') + (i < currentStep ? ' done' : '');
-        btn.dataset.step = i;
-        btn.innerHTML = `<span class="step-num">${i + 1}</span> ${s.title}`;
-        btn.onclick = () => { saveStep(); goToStep(i); };
-        nav.appendChild(btn);
-      });
-      document.getElementById('progressTotal').textContent = activeSections.length;
-    }
-
-    function updateStepNav() {
-      document.querySelectorAll('.step-nav-btn').forEach((b, i) => {
-        b.classList.toggle('active', i === currentStep);
-        b.classList.toggle('done', i < currentStep);
-      });
-    }
-
-    // ── Tool row HTML ───────────────────────────────────────────────
-    function toolRowHTML(sid, r) {
-      const base = `${sid}_r${r}`;
-      return `<div class="tool-row" data-row="${r}">
-        <input class="ti" type="text" placeholder="Tool / app name" data-key="${base}_name"/>
-        <select class="ti" data-key="${base}_active">
-          <option value="">–</option><option>Yes</option><option>No</option>
-        </select>
-        <select class="ti" data-key="${base}_acct">
-          <option value="">–</option><option>Personal</option><option>Shared / Team</option>
-        </select>
-        <div class="who-cell">
-          <div class="who-checks">
-            <label class="check-label"><input type="checkbox" data-key="${base}_alldept"/> Entire Dept.</label>
-            <label class="check-label"><input type="checkbox" data-key="${base}_myself"/> Myself</label>
-          </div>
-          <input class="ti ti-sm" type="text" placeholder="Other names / emails" data-key="${base}_who"/>
-        </div>
-        <input class="ti" type="text" placeholder="e.g. Admin, Viewer" data-key="${base}_perm"/>
-        <input class="ti" type="text" placeholder="Optional" data-key="${base}_notes"/>
-      </div>`;
-    }
-
-    function toolTableHTML(sid) {
-      return `<div class="tool-table-wrap" id="table-${sid}">
-        <div class="tool-table-header">
-          <span>Tool / App Name</span>
-          <span>Active?</span>
-          <span>Account Type</span>
-          <span>Who Uses It?</span>
-          <span>Permission Level</span>
-          <span>Notes</span>
-        </div>
-        ${toolRowHTML(sid, 0)}
-        <button class="add-row-btn" onclick="addRow('${sid}')">+ Add another tool</button>
-      </div>`;
-    }
-
-    function addRow(sid) {
-      const wrap    = document.getElementById('table-' + sid);
-      const addBtn  = wrap.querySelector('.add-row-btn');
-      const count   = wrap.querySelectorAll('.tool-row').length;
-      const div     = document.createElement('div');
-      div.innerHTML = toolRowHTML(sid, count);
-      wrap.insertBefore(div.firstElementChild, addBtn);
-    }
-
-    // ── Render step ─────────────────────────────────────────────────
-    function renderStep(idx) {
-      const sec   = activeSections[idx];
-      const total = activeSections.length;
-      const body  = document.getElementById('surveyBody');
-
-      document.getElementById('progressCurrent').textContent = idx + 1;
-      document.getElementById('progressTotal').textContent   = total;
-      document.getElementById('progressFill').style.width    = ((idx + 1) / total * 100) + '%';
-      document.getElementById('prevBtn').style.visibility    = idx === 0 ? 'hidden' : 'visible';
-      document.getElementById('nextBtn').textContent         = idx === total - 1 ? 'Submit Survey ✓' : 'Next →';
-
-      updateStepNav();
-
-      if (sec.type === 'info') {
-        body.innerHTML = `<div class="survey-page">
-          <p class="survey-instruction">Please fill in your details. All fields are required. Your department selection will tailor the survey to show only the tool categories relevant to your team.</p>
-          <div class="info-grid">
-            <div class="contact-field"><label>Full Name <span class="req">*</span></label>
-              <input class="ti" type="text" data-key="info_name" placeholder="Your full name"/></div>
-            <div class="contact-field"><label>Job Title <span class="req">*</span></label>
-              <input class="ti" type="text" data-key="info_title" placeholder="Your job title"/></div>
-            <div class="contact-field"><label>Department <span class="req">*</span></label>
-              <select class="ti" data-key="info_dept" id="deptSelect">
-                <option value="">— Select your department —</option>
-                ${DEPARTMENTS.map(d => `<option value="${d}" ${surveyData['info_dept'] === d ? 'selected' : ''}>${d}</option>`).join('')}
-              </select>
-            </div>
-            <div class="contact-field"><label>Email Address <span class="req">*</span></label>
-              <input class="ti" type="email" data-key="info_email" placeholder="yourname@rowecasaorganics.com"/></div>
-            <div class="contact-field"><label>Date <span class="req">*</span></label>
-              <input class="ti" type="date" data-key="info_date"/></div>
-          </div>
-        </div>`;
-
-      } else if (sec.type === 'tools') {
-        body.innerHTML = `<div class="survey-page">
-          <p class="survey-instruction"><strong>Examples:</strong> ${sec.examples}</p>
-          ${toolTableHTML(sec.id)}
-        </div>`;
-
-      } else if (sec.type === 'comments') {
-        body.innerHTML = `<div class="survey-page">
-          <p class="survey-instruction">Anything else we should know? Tools being trialed, tools used by only one person, or anything you're unsure how to categorize.</p>
-          <div class="contact-field" style="margin-top:1rem">
-            <label>Additional Comments <span style="color:var(--sb-muted);font-weight:400">(optional)</span></label>
-            <textarea class="ti" rows="7" data-key="comments" placeholder="Share any extra context here..."></textarea>
-          </div>
-        </div>`;
-
-      } else if (sec.type === 'review') {
-        body.innerHTML = `<div class="survey-page">
-          <p class="survey-instruction">Please review your details below then click <strong>Submit Survey</strong> to send your responses to the RCO IT team.</p>
-          <div class="review-box">
-            <div class="review-row"><span>Name</span><strong>${surveyData['info_name'] || '—'}</strong></div>
-            <div class="review-row"><span>Job Title</span><strong>${surveyData['info_title'] || '—'}</strong></div>
-            <div class="review-row"><span>Department</span><strong>${surveyData['info_dept'] || '—'}</strong></div>
-            <div class="review-row"><span>Email</span><strong>${surveyData['info_email'] || '—'}</strong></div>
-            <div class="review-row"><span>Date</span><strong>${surveyData['info_date'] || '—'}</strong></div>
-            <div class="review-row"><span>Sections completed</span><strong>${activeSections.length - 3} tool categories</strong></div>
-          </div>
-          <p class="survey-instruction" style="margin-top:1.25rem">By submitting you confirm all information is accurate to the best of your knowledge.</p>
-          <div id="submitStatus" class="contact-status" style="margin-top:0.75rem"></div>
-        </div>`;
-      }
-
-      restoreValues(body);
-      window.scrollTo(0, 0);
-    }
-
-    // ── Save / restore ───────────────────────────────────────────────
-    function saveStep() {
-      document.querySelectorAll('#surveyBody [data-key]').forEach(el => {
-        surveyData[el.dataset.key] = el.type === 'checkbox' ? el.checked : el.value;
-      });
-    }
-
-    function restoreValues(container) {
-      container.querySelectorAll('[data-key]').forEach(el => {
-        const v = surveyData[el.dataset.key];
-        if (v === undefined) return;
-        if (el.type === 'checkbox') el.checked = v;
-        else el.value = v;
-      });
-    }
-
-    // ── Validation ───────────────────────────────────────────────────
-    function validateStep(idx) {
-      if (activeSections[idx]?.type !== 'info') return true;
-      const required = ['info_name','info_title','info_dept','info_email','info_date'];
-      for (const key of required) {
-        if (!surveyData[key] || surveyData[key].trim() === '') {
-          alert('Please complete all required fields before continuing.');
-          return false;
-        }
-      }
-      return true;
-    }
-
-    // ── Navigation ───────────────────────────────────────────────────
-    function goToStep(idx) {
-      currentStep = idx;
-      renderStep(idx);
-    }
-
-    function surveyNav(dir) {
-      saveStep();
-
-      // On leaving info step, rebuild sections based on selected dept
-      if (activeSections[currentStep]?.type === 'info' && dir === 1) {
-        if (!validateStep(currentStep)) return;
-        const dept = surveyData['info_dept'];
-        activeSections = buildSections(dept);
-        buildStepNav();
-      }
-
-      if (dir === 1 && currentStep === activeSections.length - 1) {
-        submitSurvey(); return;
-      }
-
-      goToStep(currentStep + dir);
-    }
-
-    // ── Submit ───────────────────────────────────────────────────────
-    async function submitSurvey() {
-      const btn = document.getElementById('nextBtn');
-      btn.textContent = 'Submitting...';
-      btn.disabled = true;
-
-      const payload = { ...surveyData, submitted_at: new Date().toISOString() };
-
-      try {
-        await fetch(SHEET_ENDPOINT, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        // Save to localStorage for My Completed tab
-        const submissions = JSON.parse(localStorage.getItem('rco_submissions') || '[]');
-        submissions.unshift({
-          title: 'Technology & Application Discovery Survey',
-          dept:  surveyData['info_dept']  || '—',
-          email: surveyData['info_email'] || '—',
-          date:  new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }),
-          url:   'surveys/tech-discovery.html'
-        });
-        localStorage.setItem('rco_submissions', JSON.stringify(submissions));
-
-        const el = document.getElementById('submitStatus');
-        if (el) {
-          el.textContent = '✅ Survey submitted! Redirecting you back to the portal...';
-          el.className = 'contact-status success';
-        }
-        btn.textContent = 'Submitted ✓';
-
-        // Redirect back to portal after 2.5 seconds
-        setTimeout(() => window.location.href = '../index.html', 2500);
-
-      } catch(e) {
-        const el = document.getElementById('submitStatus');
-        if (el) {
-          el.textContent = '❌ Submission failed. Please try again or contact itsupport@rowecasaorganics.com.';
-          el.className = 'contact-status error';
-        }
-        btn.textContent = 'Submit Survey ✓';
-        btn.disabled = false;
-      }
-    }
-
-    // ── Init — start with just info step until dept is chosen ────────
-    function init() {
-      activeSections = [
-        { id: 'info',     title: 'Your Information', type: 'info' },
-        { id: 'comments', title: 'Additional Comments', type: 'comments' },
-        { id: 'review',   title: 'Review & Submit',     type: 'review'   }
-      ];
-      buildStepNav();
-      renderStep(0);
-    }
-
-    init();
-  </script>
-
-</body>
-</html>
+function setContactStatus(type, msg) {
+  const el = document.getElementById('contactStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'contact-status' + (type ? ' ' + type : '');
+}
