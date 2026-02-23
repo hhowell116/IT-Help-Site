@@ -73,13 +73,28 @@ async function renderCompleted() {
   const list = document.getElementById('completedList');
   if (!list) return;
 
+  list.innerHTML = `<div class="empty-state"><div class="login-spinner" style="margin:2rem auto"></div><p style="color:var(--sb-muted)">Loading your submissions...</p></div>`;
+
+  // Wait for auth to resolve — up to 5 seconds
+  if (!currentUser) {
+    await new Promise(resolve => {
+      const unsub = onAuthStateChanged(auth, user => {
+        if (user) {
+          currentUser = user;
+          unsub();
+          resolve();
+        }
+      });
+      setTimeout(resolve, 5000); // fallback timeout
+    });
+  }
+
   if (!currentUser) {
     list.innerHTML = `<div class="empty-state"><p style="color:var(--sb-muted)">Please sign in to view your submissions.</p></div>`;
     return;
   }
 
-  list.innerHTML = `<div class="empty-state"><div class="login-spinner" style="margin:2rem auto"></div><p style="color:var(--sb-muted)">Loading your submissions...</p></div>`;
-
+  console.log('renderCompleted — currentUser:', currentUser?.email);
   try {
     const q = query(
       collection(db, 'submissions'),
