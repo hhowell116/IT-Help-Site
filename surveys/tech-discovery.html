@@ -416,17 +416,13 @@
 
       const payload = { ...surveyData, submitted_at: new Date().toISOString() };
 
-      // 1. Send to Google Sheet (fire-and-forget — no-cors so we can't read response)
-      try {
-        await fetch(SHEET_ENDPOINT, {
-          method:  'POST',
-          mode:    'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify(payload),
-        });
-      } catch (e) {
-        console.warn('Google Sheet write failed (non-fatal):', e);
-      }
+      // 1. Fire Google Sheet write — don't await it, we can't read the response anyway
+      fetch(SHEET_ENDPOINT, {
+        method:  'POST',
+        mode:    'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      }).catch(e => console.warn('Google Sheet write failed (non-fatal):', e));
 
       // 2. Save to Firestore so the My Completed tab can read it
       //    window.saveSubmission is defined in the module block above
