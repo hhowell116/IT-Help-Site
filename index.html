@@ -8,7 +8,6 @@
 </head>
 <body>
 
-  <!-- APP SHELL -->
   <div class="app-shell">
 
     <!-- SIDEBAR -->
@@ -18,19 +17,19 @@
       </div>
       <div class="sidebar-divider"></div>
       <nav class="sidebar-nav">
-        <button class="nav-btn active" onclick="showSection('surveys', this)">
+        <button class="nav-btn active" data-section="surveys">
           <span class="nav-icon">📋</span> Surveys
         </button>
-        <button class="nav-btn" onclick="showSection('forms', this)">
+        <button class="nav-btn" data-section="forms">
           <span class="nav-icon">📝</span> Request Forms
         </button>
-        <button class="nav-btn" onclick="showSection('completed', this)">
+        <button class="nav-btn" data-section="completed">
           <span class="nav-icon">✅</span> My Completed
         </button>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-divider"></div>
-        <button class="contact-btn" onclick="showSection('contact', this)">
+        <button class="contact-btn" data-section="contact">
           ✉️ Contact Us
         </button>
         <div class="portal-label">RCO IT Help Site</div>
@@ -63,7 +62,6 @@
             <p>Complete your assigned surveys to help our team manage technology across the organization.</p>
           </div>
           <div class="cards">
-
             <div class="card brown">
               <div class="card-top">
                 <span class="card-status status-active">Active</span>
@@ -75,12 +73,9 @@
                   <span class="meta-label">Est. completion time</span>
                   <span class="meta-value">10 – 15 mins</span>
                 </div>
-                <button class="card-action" onclick="window.location.href='surveys/tech-discovery.html'">Start →</button>
+                <button class="card-action" id="startSurveyBtn">Start →</button>
               </div>
             </div>
-
-
-
           </div>
         </section>
 
@@ -91,40 +86,24 @@
             <p>Submit IT requests for new employees, departing staff, or equipment and software needs.</p>
           </div>
           <div class="cards">
-
             <div class="card brown">
-              <div class="card-top">
-                <span class="card-status status-draft">In Progress</span>
-              </div>
+              <div class="card-top"><span class="card-status status-draft">In Progress</span></div>
               <h3>User Onboarding Request</h3>
               <p>Submit everything IT needs to provision a new employee — role, system access, devices, and software requirements.</p>
-              <div class="card-meta">
-                <button class="card-action disabled">Coming Soon</button>
-              </div>
+              <div class="card-meta"><button class="card-action disabled">Coming Soon</button></div>
             </div>
-
             <div class="card brown">
-              <div class="card-top">
-                <span class="card-status status-draft">In Progress</span>
-              </div>
+              <div class="card-top"><span class="card-status status-draft">In Progress</span></div>
               <h3>User Offboarding Request</h3>
               <p>Capture separation details for a departing employee — access revocation, email handling, file transfer, and device return.</p>
-              <div class="card-meta">
-                <button class="card-action disabled">Coming Soon</button>
-              </div>
+              <div class="card-meta"><button class="card-action disabled">Coming Soon</button></div>
             </div>
-
             <div class="card brown">
-              <div class="card-top">
-                <span class="card-status status-draft">In Progress</span>
-              </div>
+              <div class="card-top"><span class="card-status status-draft">In Progress</span></div>
               <h3>IT Equipment & Software Request</h3>
               <p>Request any technology need — hardware, software, or licenses — with business justification and manager approval workflow.</p>
-              <div class="card-meta">
-                <button class="card-action disabled">Coming Soon</button>
-              </div>
+              <div class="card-meta"><button class="card-action disabled">Coming Soon</button></div>
             </div>
-
           </div>
         </section>
 
@@ -133,7 +112,7 @@
           <div class="section-intro">
             <h2>My Completed Submissions</h2>
             <p>A record of all surveys and forms you have submitted.</p>
-            <button class="clear-btn" style="margin-top:0.75rem" onclick="renderCompleted()">↻ Refresh</button>
+            <button class="clear-btn" style="margin-top:0.75rem" id="refreshBtn">↻ Refresh</button>
           </div>
           <div id="completedList"></div>
         </section>
@@ -174,7 +153,6 @@
   </div>
 
   <script type="module" src="app.js"></script>
-  <!-- Firestore is imported directly inside app.js via ES module imports -->
 
 </body>
 </html>
