@@ -683,7 +683,7 @@ body.dark .card.yellow { background: linear-gradient(145deg, #33383f 0%, #352e28
   color: #fff;
 }
 
-.req { color: #c0392b; font-weight: 700; }
+.completed-card { max-width: 420px; }
 
 /* =====================
    TOPBAR INLINE DESC
