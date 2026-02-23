@@ -3,12 +3,11 @@
 //  Handles: Firebase auth, Firestore submissions, nav, contact
 // ============================================================
 
-import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, onAuthStateChanged, signOut }   from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFirestore, collection, query,
-         where, getDocs }                from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { initializeApp }                                    from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, onAuthStateChanged, signOut }             from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-// ── Config ───────────────────────────────────────────────────
+// ── Config ────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyDEn7ooJJ1zATM5oEnx3ByDiOFTFxr_JiA",
   authDomain:        "rco-metrics-d0f3b.firebaseapp.com",
@@ -21,14 +20,14 @@ const FIREBASE_CONFIG = {
 
 const ALLOWED_DOMAIN = '@rowecasaorganics.com';
 
-// ── Init ─────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────
 const app  = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
 let currentUser = null;
 
-// ── Auth guard ───────────────────────────────────────────────
+// ── Auth guard ────────────────────────────────────────────────
 onAuthStateChanged(auth, user => {
   if (!user || !user.email.endsWith(ALLOWED_DOMAIN)) {
     signOut(auth).finally(() => window.location.replace('login.html'));
@@ -39,19 +38,17 @@ onAuthStateChanged(auth, user => {
   if (userEl) userEl.textContent = user.email;
 });
 
-// ── Sign out ─────────────────────────────────────────────────
+// ── Sign out ──────────────────────────────────────────────────
 document.getElementById('authBtn')?.addEventListener('click', () => {
   signOut(auth).then(() => window.location.replace('login.html'));
 });
 
-// ── Sidebar nav — wire up all nav buttons via data-section ───
+// ── Sidebar nav — wire all [data-section] buttons ─────────────
 document.querySelectorAll('[data-section]').forEach(btn => {
   btn.addEventListener('click', () => {
     const name = btn.dataset.section;
-    // Deactivate all
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('[data-section]').forEach(b => b.classList.remove('active'));
-    // Activate target
     document.getElementById('section-' + name)?.classList.add('active');
     btn.classList.add('active');
     if (name === 'completed') renderCompleted();
@@ -73,35 +70,35 @@ async function renderCompleted() {
   const list = document.getElementById('completedList');
   if (!list) return;
 
-  list.innerHTML = `<div class="empty-state"><div class="login-spinner" style="margin:2rem auto"></div><p style="color:var(--sb-muted)">Loading your submissions...</p></div>`;
+  list.innerHTML = `<div class="empty-state">
+    <div class="login-spinner" style="margin:2rem auto"></div>
+    <p style="color:var(--sb-muted)">Loading your submissions...</p>
+  </div>`;
 
-  // Wait for auth to resolve — up to 5 seconds
+  // Wait for auth to resolve if currentUser isn't set yet
   if (!currentUser) {
     await new Promise(resolve => {
       const unsub = onAuthStateChanged(auth, user => {
-        if (user) {
-          currentUser = user;
-          unsub();
-          resolve();
-        }
+        if (user) { currentUser = user; unsub(); resolve(); }
       });
-      setTimeout(resolve, 5000); // fallback timeout
+      setTimeout(resolve, 5000); // fallback
     });
   }
 
   if (!currentUser) {
-    list.innerHTML = `<div class="empty-state"><p style="color:var(--sb-muted)">Please sign in to view your submissions.</p></div>`;
+    list.innerHTML = `<div class="empty-state">
+      <p style="color:var(--sb-muted)">Please sign in to view your submissions.</p>
+    </div>`;
     return;
   }
 
-  console.log('renderCompleted — currentUser:', currentUser?.email);
+  console.log('renderCompleted — currentUser:', currentUser.email);
+
   try {
-    const q = query(
-      collection(db, 'submissions'),
-      where('userEmail', '==', currentUser.email)
-    );
+    const q    = query(collection(db, 'submissions'), where('userEmail', '==', currentUser.email));
     const snap = await getDocs(q);
-    console.log('Firestore query returned', snap.size, 'docs for', currentUser.email);
+
+    console.log('Firestore returned', snap.size, 'docs for', currentUser.email);
 
     if (snap.empty) {
       list.innerHTML = `<div class="empty-state">
@@ -115,7 +112,10 @@ async function renderCompleted() {
     list.innerHTML = `<div class="cards">` + snap.docs.map(doc => {
       const s    = doc.data();
       const date = s.submittedAt?.toDate
-        ? s.submittedAt.toDate().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+        ? s.submittedAt.toDate().toLocaleString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit'
+          })
         : '—';
       return `<div class="card brown completed-card">
         <div class="card-top">
@@ -123,22 +123,21 @@ async function renderCompleted() {
         </div>
         <h3>${s.title || 'Survey'}</h3>
         <p style="font-size:0.82rem;line-height:1.7">
-          <strong>Department:</strong> ${s.dept || '—'}<br/>
-          <strong>Submitted:</strong> ${date}<br/>
-          <strong>By:</strong> ${s.userEmail || '—'}
+          <strong>Department:</strong> ${s.dept      || '—'}<br/>
+          <strong>Submitted:</strong>  ${date}<br/>
+          <strong>By:</strong>         ${s.userEmail || '—'}
         </p>
         <div class="card-meta">
-          <button class="card-action" data-url="${s.url}">Take Again →</button>
+          <button class="card-action" data-url="${s.url || '#'}">Take Again →</button>
         </div>
       </div>`;
     }).join('') + `</div>`;
 
-    // Wire up Take Again buttons
     list.querySelectorAll('[data-url]').forEach(btn => {
       btn.addEventListener('click', () => window.location.href = btn.dataset.url);
     });
 
-  } catch(err) {
+  } catch (err) {
     console.error('Firestore error:', err);
     list.innerHTML = `<div class="empty-state">
       <div class="empty-icon">⚠️</div>
@@ -148,7 +147,7 @@ async function renderCompleted() {
   }
 }
 
-// ── Contact form ─────────────────────────────────────────────
+// ── Contact form ──────────────────────────────────────────────
 document.getElementById('sendBtn')?.addEventListener('click', () => {
   const from    = document.getElementById('contactFrom')?.value.trim();
   const subject = document.getElementById('contactSubject')?.value.trim();
@@ -179,5 +178,5 @@ function setContactStatus(type, msg) {
   const el = document.getElementById('contactStatus');
   if (!el) return;
   el.textContent = msg;
-  el.className = 'contact-status' + (type ? ' ' + type : '');
+  el.className   = 'contact-status' + (type ? ' ' + type : '');
 }
