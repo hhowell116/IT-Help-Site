@@ -54,6 +54,50 @@
 
   <script>
     const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxeP-Asvk9kgGx_oz4jMWYOBldaPLM8Tm6S2XfXOfDRat-3KX1UfVXYzEju2Dc7nDwBGg/exec';
+  </script>
+
+  <!-- Firebase — saves submission to Firestore for My Completed tab -->
+  <script type="module">
+    import { initializeApp }                    from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged }      from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const FIREBASE_CONFIG = {
+      apiKey:            "AIzaSyDEn7ooJJ1zATM5oEnx3ByDiOFTFxr_JiA",
+      authDomain:        "rco-metrics-d0f3b.firebaseapp.com",
+      projectId:         "rco-metrics-d0f3b",
+      storageBucket:     "rco-metrics-d0f3b.firebasestorage.app",
+      messagingSenderId: "1021645263850",
+      appId:             "1:1021645263850:web:dfd5c7cd0bd99762679893",
+      measurementId:     "G-DR5MLDL5BG"
+    };
+
+    const app  = initializeApp(FIREBASE_CONFIG);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    // Expose current user to the main script
+    onAuthStateChanged(auth, user => {
+      window._currentUser = user || null;
+    });
+
+    // Expose saveSubmission globally so the main script can call it
+    window.saveSubmission = async function(data) {
+      try {
+        await addDoc(collection(db, 'submissions'), {
+          ...data,
+          userEmail:   window._currentUser?.email || '',
+          submittedAt: new Date(),
+        });
+        return true;
+      } catch(err) {
+        console.error('Firestore save failed:', err);
+        return false;
+      }
+    };
+  </script>
+
+  <script>
 
     // ── Departments from org chart + their relevant tool sections ──
     const DEPARTMENTS = [
