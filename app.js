@@ -6,7 +6,7 @@
 import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut }   from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, collection, query,
-         where, orderBy, getDocs }                from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+         where, getDocs }                from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // ── Config ───────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
@@ -98,8 +98,7 @@ async function renderCompleted() {
   try {
     const q = query(
       collection(db, 'submissions'),
-      where('userEmail', '==', currentUser.email),
-      orderBy('submittedAt', 'desc')
+      where('userEmail', '==', currentUser.email)
     );
     const snap = await getDocs(q);
     console.log('Firestore query returned', snap.size, 'docs for', currentUser.email);
