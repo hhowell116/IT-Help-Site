@@ -1,27 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>IT Help Site — Rowe Casa Organics</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-
-  <!-- LOCK OVERLAY -->
-  <div class="lock-overlay" id="lockOverlay">
-    <div class="lock-modal">
-      <div class="lock-icon">🔒</div>
-      <h2>IT Internal Portal</h2>
-      <p>This portal is restricted to company staff only. Please sign in with your work Google account to continue.</p>
-      <div class="domain-note">Only <strong>@rowecasaorganics.com</strong> accounts are permitted.</div>
-      <button class="google-btn" onclick="dismissLock()">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"/>
-        Sign in with Google
-      </button>
-    </div>
-  </div>
 
   <!-- APP SHELL -->
   <div class="app-shell">
@@ -29,7 +14,7 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar-logo-wrap">
-        <img src="logo.png" alt="Rowe Casa Organics" class="sidebar-logo" />
+        <img src="logo.png" alt="Rowe Casa Organics" class="sidebar-logo"/>
       </div>
       <div class="sidebar-divider"></div>
       <nav class="sidebar-nav">
@@ -64,14 +49,14 @@
         </div>
         <div class="topbar-right">
           <span class="topbar-user" id="topbarUser">Not signed in</span>
-          <button class="sign-btn" id="authBtn" onclick="showLock()">Sign In</button>
+          <button class="sign-btn" id="authBtn">Sign Out</button>
         </div>
       </header>
 
       <!-- CONTENT PANEL -->
       <main class="content-panel">
 
-        <!-- SURVEYS SECTION -->
+        <!-- SURVEYS -->
         <section class="section active" id="section-surveys">
           <div class="section-intro">
             <h2>IT Surveys</h2>
@@ -127,7 +112,7 @@
           </div>
         </section>
 
-        <!-- FORMS SECTION -->
+        <!-- FORMS -->
         <section class="section" id="section-forms">
           <div class="section-intro">
             <h2>Request Forms</h2>
@@ -171,7 +156,7 @@
           </div>
         </section>
 
-        <!-- COMPLETED SECTION -->
+        <!-- COMPLETED -->
         <section class="section" id="section-completed">
           <div class="section-intro">
             <h2>My Completed Submissions</h2>
@@ -180,12 +165,11 @@
           <div class="empty-state">
             <div class="empty-icon">📭</div>
             <h3>No submissions yet</h3>
-            <p>Once you sign in and complete a survey or form, your submissions will appear here.</p>
-            <button class="card-action" onclick="showLock()">Sign In to View</button>
+            <p>Complete a survey or form and your submissions will appear here.</p>
           </div>
         </section>
 
-        <!-- CONTACT SECTION -->
+        <!-- CONTACT -->
         <section class="section" id="section-contact">
           <div class="section-intro">
             <h2>Contact IT Support</h2>
@@ -194,23 +178,23 @@
           <div class="contact-form-wrap">
             <div class="contact-field">
               <label for="contactFrom">Your Email Address</label>
-              <input type="email" id="contactFrom" placeholder="yourname@rowecasaorganics.com" />
+              <input type="email" id="contactFrom" placeholder="yourname@rowecasaorganics.com"/>
             </div>
             <div class="contact-field">
               <label for="contactTo">To</label>
-              <input type="text" id="contactTo" value="itsupport@rowecasaorganics.com" readonly />
+              <input type="text" id="contactTo" value="itsupport@rowecasaorganics.com" readonly/>
             </div>
             <div class="contact-field">
               <label for="contactSubject">Subject</label>
-              <input type="text" id="contactSubject" placeholder="Brief description of your issue or request" />
+              <input type="text" id="contactSubject" placeholder="Brief description of your issue or request"/>
             </div>
             <div class="contact-field">
               <label for="contactBody">Message</label>
               <textarea id="contactBody" rows="6" placeholder="Describe your issue, request, or question in detail..."></textarea>
             </div>
             <div class="contact-actions">
-              <button class="card-action" id="sendBtn" onclick="sendContactEmail()">Send Message →</button>
-              <button class="clear-btn" onclick="clearContactForm()">Clear</button>
+              <button class="card-action" id="sendBtn">Send Message →</button>
+              <button class="clear-btn" id="clearBtn">Clear</button>
             </div>
             <div id="contactStatus" class="contact-status"></div>
           </div>
@@ -220,56 +204,8 @@
     </div>
   </div>
 
-  <script>
-    const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
-    const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
-    const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
-    emailjs.init(EMAILJS_PUBLIC_KEY);
-
-    function showLock() { document.getElementById('lockOverlay').style.display = 'flex'; }
-    function dismissLock() { document.getElementById('lockOverlay').style.display = 'none'; }
-
-    function showSection(name, btn) {
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.nav-btn, .contact-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('section-' + name).classList.add('active');
-      if (btn) btn.classList.add('active');
-    }
-
-    async function sendContactEmail() {
-      const from    = document.getElementById('contactFrom').value.trim();
-      const subject = document.getElementById('contactSubject').value.trim();
-      const body    = document.getElementById('contactBody').value.trim();
-      const btn     = document.getElementById('sendBtn');
-      if (!from)    { showStatus('error', 'Please enter your email address.'); return; }
-      if (!subject) { showStatus('error', 'Please enter a subject.'); return; }
-      if (!body)    { showStatus('error', 'Please enter a message.'); return; }
-      btn.textContent = 'Sending...';
-      btn.disabled = true;
-      try {
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-          from_email: from, to_email: 'itsupport@rowecasaorganics.com', subject, message: body
-        });
-        showStatus('success', '✅ Message sent! The IT team will be in touch shortly.');
-        clearContactForm();
-      } catch(e) {
-        showStatus('error', '❌ Failed to send. Please email itsupport@rowecasaorganics.com directly.');
-      } finally {
-        btn.textContent = 'Send Message →';
-        btn.disabled = false;
-      }
-    }
-
-    function showStatus(type, msg) {
-      const el = document.getElementById('contactStatus');
-      el.textContent = msg;
-      el.className = 'contact-status ' + type;
-    }
-
-    function clearContactForm() {
-      ['contactFrom','contactSubject','contactBody'].forEach(id => document.getElementById(id).value = '');
-    }
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script type="module" src="app.js"></script>
 
 </body>
 </html>
