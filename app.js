@@ -5,7 +5,7 @@
 
 import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut }   from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFirestore, collection, addDoc, query,
+import { getFirestore, collection, query,
          where, orderBy, getDocs }                from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // ── Config ───────────────────────────────────────────────────
@@ -40,36 +40,54 @@ onAuthStateChanged(auth, user => {
 });
 
 // ── Sign out ─────────────────────────────────────────────────
-const authBtn = document.getElementById('authBtn');
-if (authBtn) {
-  authBtn.addEventListener('click', () => {
-    signOut(auth).then(() => window.location.replace('login.html'));
+document.getElementById('authBtn')?.addEventListener('click', () => {
+  signOut(auth).then(() => window.location.replace('login.html'));
+});
+
+// ── Sidebar nav — wire up all nav buttons via data-section ───
+document.querySelectorAll('[data-section]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const name = btn.dataset.section;
+    // Deactivate all
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('[data-section]').forEach(b => b.classList.remove('active'));
+    // Activate target
+    document.getElementById('section-' + name)?.classList.add('active');
+    btn.classList.add('active');
+    if (name === 'completed') renderCompleted();
   });
-}
+});
 
-// ── Section nav ──────────────────────────────────────────────
-window.showSection = function(name, btn) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn, .contact-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('section-' + name)?.classList.add('active');
-  if (btn) btn.classList.add('active');
-  if (name === 'completed') renderCompleted();
-};
+// ── Start survey button ───────────────────────────────────────
+document.getElementById('startSurveyBtn')?.addEventListener('click', () => {
+  window.location.href = 'surveys/tech-discovery.html';
+});
 
-// ── Completed submissions (Firestore) ────────────────────────
+// ── Refresh button ────────────────────────────────────────────
+document.getElementById('refreshBtn')?.addEventListener('click', () => {
+  renderCompleted();
+});
+
+// ── Completed submissions ─────────────────────────────────────
 async function renderCompleted() {
   const list = document.getElementById('completedList');
   if (!list) return;
 
-  list.innerHTML = `<div class="empty-state"><div class="login-spinner" style="margin:2rem auto"></div><p>Loading your submissions...</p></div>`;
+  if (!currentUser) {
+    list.innerHTML = `<div class="empty-state"><p style="color:var(--sb-muted)">Please sign in to view your submissions.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = `<div class="empty-state"><div class="login-spinner" style="margin:2rem auto"></div><p style="color:var(--sb-muted)">Loading your submissions...</p></div>`;
 
   try {
     const q = query(
       collection(db, 'submissions'),
-      where('userEmail', '==', currentUser?.email || ''),
+      where('userEmail', '==', currentUser.email),
       orderBy('submittedAt', 'desc')
     );
     const snap = await getDocs(q);
+    console.log('Firestore query returned', snap.size, 'docs for', currentUser.email);
 
     if (snap.empty) {
       list.innerHTML = `<div class="empty-state">
@@ -81,10 +99,10 @@ async function renderCompleted() {
     }
 
     list.innerHTML = `<div class="cards">` + snap.docs.map(doc => {
-      const s = doc.data();
+      const s    = doc.data();
       const date = s.submittedAt?.toDate
         ? s.submittedAt.toDate().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
-        : s.submittedAt || '—';
+        : '—';
       return `<div class="card brown completed-card">
         <div class="card-top">
           <span class="card-status status-active">Submitted</span>
@@ -96,70 +114,52 @@ async function renderCompleted() {
           <strong>By:</strong> ${s.userEmail || '—'}
         </p>
         <div class="card-meta">
-          <button class="card-action" onclick="window.location.href='${s.url}'">Take Again →</button>
+          <button class="card-action" data-url="${s.url}">Take Again →</button>
         </div>
       </div>`;
     }).join('') + `</div>`;
+
+    // Wire up Take Again buttons
+    list.querySelectorAll('[data-url]').forEach(btn => {
+      btn.addEventListener('click', () => window.location.href = btn.dataset.url);
+    });
 
   } catch(err) {
     console.error('Firestore error:', err);
     list.innerHTML = `<div class="empty-state">
       <div class="empty-icon">⚠️</div>
       <h3>Could not load submissions</h3>
-      <p>Please refresh the page and try again.</p>
+      <p style="color:var(--sb-muted)">${err.message}</p>
     </div>`;
   }
 }
 
-// ── Save submission to Firestore (called from survey pages) ──
-window.saveSubmission = async function(data) {
-  try {
-    await addDoc(collection(db, 'submissions'), {
-      ...data,
-      userEmail:   currentUser?.email || '',
-      submittedAt: new Date(),
-    });
-    return true;
-  } catch(err) {
-    console.error('Failed to save submission:', err);
-    return false;
-  }
-};
-
 // ── Contact form ─────────────────────────────────────────────
-const sendBtn  = document.getElementById('sendBtn');
-const clearBtn = document.getElementById('clearBtn');
+document.getElementById('sendBtn')?.addEventListener('click', () => {
+  const from    = document.getElementById('contactFrom')?.value.trim();
+  const subject = document.getElementById('contactSubject')?.value.trim();
+  const body    = document.getElementById('contactBody')?.value.trim();
 
-if (sendBtn) {
-  sendBtn.addEventListener('click', () => {
-    const from    = document.getElementById('contactFrom')?.value.trim();
-    const subject = document.getElementById('contactSubject')?.value.trim();
-    const body    = document.getElementById('contactBody')?.value.trim();
+  if (!from)    { setContactStatus('error', 'Please enter your email address.'); return; }
+  if (!subject) { setContactStatus('error', 'Please enter a subject.'); return; }
+  if (!body)    { setContactStatus('error', 'Please enter a message.'); return; }
 
-    if (!from)    { setContactStatus('error', 'Please enter your email address.'); return; }
-    if (!subject) { setContactStatus('error', 'Please enter a subject.'); return; }
-    if (!body)    { setContactStatus('error', 'Please enter a message.'); return; }
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1`
+    + `&to=${encodeURIComponent('itsupport@rowecasaorganics.com')}`
+    + `&su=${encodeURIComponent(subject)}`
+    + `&body=${encodeURIComponent('From: ' + from + '\n\n' + body)}`;
 
-    const fullBody = `From: ${from}\n\n${body}`;
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1`
-      + `&to=${encodeURIComponent('itsupport@rowecasaorganics.com')}`
-      + `&su=${encodeURIComponent(subject)}`
-      + `&body=${encodeURIComponent(fullBody)}`;
+  window.open(gmailUrl, '_blank');
+  setContactStatus('success', '✅ Gmail opened with your message ready to send!');
+});
 
-    window.open(gmailUrl, '_blank');
-    setContactStatus('success', '✅ Gmail opened with your message ready to send!');
-  });
-}
-
-if (clearBtn) clearBtn.addEventListener('click', clearContactForm);
-
-function clearContactForm() {
+document.getElementById('clearBtn')?.addEventListener('click', () => {
   ['contactFrom','contactSubject','contactBody'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   setContactStatus('', '');
-}
+});
 
 function setContactStatus(type, msg) {
   const el = document.getElementById('contactStatus');
