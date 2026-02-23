@@ -1,10 +1,12 @@
 // ============================================================
 //  app.js — RCO IT Help Site
-//  Handles: Firebase auth, nav, EmailJS contact form
+//  Handles: Firebase auth, Firestore submissions, nav, contact
 // ============================================================
 
 import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut }   from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, collection, addDoc, query,
+         where, orderBy, getDocs }                from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // ── Config ───────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
@@ -17,25 +19,27 @@ const FIREBASE_CONFIG = {
   measurementId:     "G-DR5MLDL5BG"
 };
 
-const ALLOWED_DOMAIN    = '@rowecasaorganics.com';
+const ALLOWED_DOMAIN = '@rowecasaorganics.com';
 
-
-// ── Firebase init ─────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────
 const app  = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
+const db   = getFirestore(app);
 
-// ── Auth guard — redirect to login if not signed in ───────────
+let currentUser = null;
+
+// ── Auth guard ───────────────────────────────────────────────
 onAuthStateChanged(auth, user => {
   if (!user || !user.email.endsWith(ALLOWED_DOMAIN)) {
     signOut(auth).finally(() => window.location.replace('login.html'));
     return;
   }
-  // Show user email in topbar
+  currentUser = user;
   const userEl = document.getElementById('topbarUser');
   if (userEl) userEl.textContent = user.email;
 });
 
-// ── Sign out button ───────────────────────────────────────────
+// ── Sign out ─────────────────────────────────────────────────
 const authBtn = document.getElementById('authBtn');
 if (authBtn) {
   authBtn.addEventListener('click', () => {
@@ -52,44 +56,77 @@ window.showSection = function(name, btn) {
   if (name === 'completed') renderCompleted();
 };
 
-// ── Completed submissions ─────────────────────────────────────
-function loadSubmissions() {
-  try { return JSON.parse(localStorage.getItem('rco_submissions') || '[]'); }
-  catch { return []; }
-}
-
-function renderCompleted() {
+// ── Completed submissions (Firestore) ────────────────────────
+async function renderCompleted() {
   const list = document.getElementById('completedList');
   if (!list) return;
-  const submissions = loadSubmissions();
 
-  if (submissions.length === 0) {
+  list.innerHTML = `<div class="empty-state"><div class="login-spinner" style="margin:2rem auto"></div><p>Loading your submissions...</p></div>`;
+
+  try {
+    const q = query(
+      collection(db, 'submissions'),
+      where('userEmail', '==', currentUser?.email || ''),
+      orderBy('submittedAt', 'desc')
+    );
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>No submissions yet</h3>
+        <p>Complete a survey or form and your submissions will appear here.</p>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = `<div class="cards">` + snap.docs.map(doc => {
+      const s = doc.data();
+      const date = s.submittedAt?.toDate
+        ? s.submittedAt.toDate().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+        : s.submittedAt || '—';
+      return `<div class="card brown completed-card">
+        <div class="card-top">
+          <span class="card-status status-active">Submitted</span>
+        </div>
+        <h3>${s.title || 'Survey'}</h3>
+        <p style="font-size:0.82rem;line-height:1.7">
+          <strong>Department:</strong> ${s.dept || '—'}<br/>
+          <strong>Submitted:</strong> ${date}<br/>
+          <strong>By:</strong> ${s.userEmail || '—'}
+        </p>
+        <div class="card-meta">
+          <button class="card-action" onclick="window.location.href='${s.url}'">Take Again →</button>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+
+  } catch(err) {
+    console.error('Firestore error:', err);
     list.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">📭</div>
-      <h3>No submissions yet</h3>
-      <p>Complete a survey or form and your submissions will appear here.</p>
+      <div class="empty-icon">⚠️</div>
+      <h3>Could not load submissions</h3>
+      <p>Please refresh the page and try again.</p>
     </div>`;
-    return;
   }
-
-  list.innerHTML = submissions.map((s, i) => `
-    <div class="card brown completed-card">
-      <div class="card-top">
-        <span class="card-status status-active">Submitted</span>
-      </div>
-      <h3>${s.title}</h3>
-      <p style="font-size:0.82rem">
-        <strong>Department:</strong> ${s.dept || '—'}<br/>
-        <strong>Submitted:</strong> ${s.date}<br/>
-        <strong>By:</strong> ${s.email || '—'}
-      </p>
-      <div class="card-meta">
-        <button class="card-action" onclick="window.location.href='${s.url}'">Take Again →</button>
-      </div>
-    </div>`).join('');
 }
 
-// ── Contact form — opens Gmail compose with fields pre-filled ─
+// ── Save submission to Firestore (called from survey pages) ──
+window.saveSubmission = async function(data) {
+  try {
+    await addDoc(collection(db, 'submissions'), {
+      ...data,
+      userEmail:   currentUser?.email || '',
+      submittedAt: new Date(),
+    });
+    return true;
+  } catch(err) {
+    console.error('Failed to save submission:', err);
+    return false;
+  }
+};
+
+// ── Contact form ─────────────────────────────────────────────
 const sendBtn  = document.getElementById('sendBtn');
 const clearBtn = document.getElementById('clearBtn');
 
@@ -104,15 +141,12 @@ if (sendBtn) {
     if (!body)    { setContactStatus('error', 'Please enter a message.'); return; }
 
     const fullBody = `From: ${from}\n\n${body}`;
-
-    // Build Gmail compose URL with everything pre-filled
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1`
       + `&to=${encodeURIComponent('itsupport@rowecasaorganics.com')}`
       + `&su=${encodeURIComponent(subject)}`
       + `&body=${encodeURIComponent(fullBody)}`;
 
     window.open(gmailUrl, '_blank');
-
     setContactStatus('success', '✅ Gmail opened with your message ready to send!');
   });
 }
