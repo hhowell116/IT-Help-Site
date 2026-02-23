@@ -308,33 +308,44 @@ body {
 }
 
 .card {
-  background: linear-gradient(160deg, #ffffff 60%, #f9f5f0 100%);
   border: 1.5px solid var(--sb-border);
   border-radius: 16px;
-  padding: 1.4rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.18s, transform 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
   cursor: default;
-  box-shadow:
-    0 2px 4px rgba(95, 75, 60, 0.06),
-    0 8px 24px rgba(95, 75, 60, 0.08);
 }
 
-body.dark .card {
-  background: linear-gradient(160deg, #33383f 60%, #2e3238 100%);
+/* Per-colour gradients & shadows */
+.card.brown {
+  background: linear-gradient(145deg, #ffffff 0%, #f7f1ea 100%);
+  box-shadow: 0 4px 6px rgba(95,75,60,0.06), 0 10px 30px rgba(95,75,60,0.1);
 }
+.card.green {
+  background: linear-gradient(145deg, #ffffff 0%, #f0faf6 100%);
+  box-shadow: 0 4px 6px rgba(46,204,138,0.06), 0 10px 30px rgba(46,204,138,0.1);
+}
+.card.yellow {
+  background: linear-gradient(145deg, #ffffff 0%, #fdf8ee 100%);
+  box-shadow: 0 4px 6px rgba(245,166,35,0.06), 0 10px 30px rgba(245,166,35,0.1);
+}
+
+body.dark .card.brown  { background: linear-gradient(145deg, #33383f 0%, #2e3238 100%); }
+body.dark .card.green  { background: linear-gradient(145deg, #33383f 0%, #2a3530 100%); }
+body.dark .card.yellow { background: linear-gradient(145deg, #33383f 0%, #352e28 100%); }
 
 .card:hover {
   border-color: var(--brand-hover-border);
   transform: translateY(-3px);
-  box-shadow:
-    0 4px 8px rgba(95, 75, 60, 0.08),
-    0 16px 40px rgba(95, 75, 60, 0.14);
 }
+
+.card.brown:hover  { box-shadow: 0 8px 12px rgba(95,75,60,0.08),  0 20px 48px rgba(95,75,60,0.14); }
+.card.green:hover  { box-shadow: 0 8px 12px rgba(46,204,138,0.08), 0 20px 48px rgba(46,204,138,0.13); }
+.card.yellow:hover { box-shadow: 0 8px 12px rgba(245,166,35,0.08), 0 20px 48px rgba(245,166,35,0.13); }
 
 /* coloured top stripe */
 .card::before {
@@ -349,31 +360,11 @@ body.dark .card {
 .card.green::before  { background: linear-gradient(90deg, #2ecc8a, #1aaf72); }
 .card.yellow::before { background: linear-gradient(90deg, #f5a623, #e08c0a); }
 
-/* subtle inner glow per colour */
-.card.brown  { box-shadow: 0 2px 4px rgba(95,75,60,0.06), 0 8px 28px rgba(95,75,60,0.1), inset 0 -60px 60px -40px rgba(95,75,60,0.04); }
-.card.green  { box-shadow: 0 2px 4px rgba(46,204,138,0.06), 0 8px 28px rgba(46,204,138,0.08), inset 0 -60px 60px -40px rgba(46,204,138,0.04); }
-.card.yellow { box-shadow: 0 2px 4px rgba(245,166,35,0.06), 0 8px 28px rgba(245,166,35,0.08), inset 0 -60px 60px -40px rgba(245,166,35,0.04); }
-
 .card-top {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-end;
 }
-
-.card-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  flex-shrink: 0;
-}
-
-.card-icon.brown  { background: rgba(95, 75, 60, 0.1); }
-.card-icon.green  { background: rgba(46, 204, 138, 0.12); }
-.card-icon.yellow { background: rgba(245, 166, 35, 0.12); }
 
 .card-status {
   font-size: 0.68rem;
