@@ -95,7 +95,7 @@ async function renderCompleted() {
   console.log('renderCompleted — currentUser:', currentUser.email);
 
   try {
-    const q    = query(collection(db, 'submissions'), where('userEmail', '==', currentUser.email));
+    const q    = query(collection(db, 'submissions'), where('uid', '==', currentUser.uid));
     const snap = await getDocs(q);
 
     console.log('Firestore returned', snap.size, 'docs for', currentUser.email);
