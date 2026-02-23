@@ -102,8 +102,6 @@
     }
 
     .google-icon { width: 20px; height: 20px; flex-shrink: 0; }
-
-    /* hide Google icon on hover so the colorful SVG doesn't clash with white text */
     .login-google-btn:hover .google-icon { opacity: 0.85; filter: brightness(10); }
 
     .login-loading {
@@ -197,20 +195,24 @@
       from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
     const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyBRKBzxTYzBnBHo-YY8fSxTSSkM3uyujmc",
-  authDomain:        "ithelpsite-4ec53.firebaseapp.com",
-  projectId:         "ithelpsite-4ec53",
-  storageBucket:     "ithelpsite-4ec53.firebasestorage.app",
-  messagingSenderId: "893459212285",
-  appId:             "1:893459212285:web:194adf30886cbb28c21b94",
-  measurementId:     "G-H6WM1LWQ4V"
-};
+      apiKey:            "AIzaSyBRKBzxTYzBnBHo-YY8fSxTSSkM3uyujmc",
+      authDomain:        "ithelpsite-4ec53.firebaseapp.com",
+      projectId:         "ithelpsite-4ec53",
+      storageBucket:     "ithelpsite-4ec53.firebasestorage.app",
+      messagingSenderId: "893459212285",
+      appId:             "1:893459212285:web:194adf30886cbb28c21b94",
+      measurementId:     "G-H6WM1LWQ4V"
+    };
 
     const ALLOWED_DOMAIN = '@rowecasaorganics.com';
 
     const app      = initializeApp(FIREBASE_CONFIG);
     const auth     = getAuth(app);
     const provider = new GoogleAuthProvider();
+
+    // Force Google to always show the account picker — prevents getting
+    // stuck on a previously used wrong account
+    provider.setCustomParameters({ prompt: 'select_account' });
 
     const btn    = document.getElementById('googleSignInBtn');
     const errEl  = document.getElementById('loginError');
@@ -229,8 +231,9 @@
       if (user.email.endsWith(ALLOWED_DOMAIN)) {
         window.location.replace('index.html');
       } else {
-        signOut(auth);
-        showError('Access denied. Only @rowecasaorganics.com accounts are permitted.');
+        signOut(auth).then(() => {
+          showError('Access denied. Only @rowecasaorganics.com accounts are permitted.');
+        });
       }
     });
 
@@ -246,7 +249,11 @@
         }
         // onAuthStateChanged handles redirect on success
       } catch (err) {
-        showError('Sign in failed: ' + err.message);
+        if (err.code === 'auth/popup-closed-by-user') {
+          showError('Sign in cancelled. Please try again.');
+        } else {
+          showError('Sign in failed: ' + err.message);
+        }
       }
     });
   </script>
