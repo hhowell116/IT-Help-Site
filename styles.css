@@ -466,10 +466,53 @@ footer {
 }
 
 /* =====================
+   CARDS BOTTOM SPACING
+   ===================== */
+.cards-bottom {
+  padding-bottom: 4rem;
+}
+
+/* =====================
    RESPONSIVE
    ===================== */
-@media (max-width: 600px) {
-  .hero h1      { font-size: 1.7rem; }
-  .stats        { gap: 1rem; }
+
+/* Large screens — cap content width, never stretch weirdly */
+@media (min-width: 1400px) {
+  .hero, .section-header, .cards { max-width: 1200px; }
+}
+
+/* Medium — single column cards */
+@media (max-width: 900px) {
+  .cards {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  header { padding: 0 1.25rem; }
+  .hero  { padding: 2.5rem 1.25rem 1.5rem; }
+  .hero h1 { font-size: 2rem; }
+  .section-header { padding: 0 1.25rem; }
+  .cards { padding: 0 1.25rem 2rem; grid-template-columns: 1fr; }
+  .cards-bottom { padding-bottom: 2.5rem; }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .hero h1      { font-size: 1.6rem; }
+  .hero p       { font-size: 0.95rem; }
+  .stats        { gap: 0.75rem; flex-wrap: wrap; }
   .stat-divider { display: none; }
+  .login-btn    { padding: 0.45rem 0.85rem; font-size: 0.8rem; }
+  .card         { padding: 1.25rem; }
+  .card-meta    { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .card-action  { width: 100%; text-align: center; }
+  .lock-modal   { padding: 2rem 1.25rem; }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .hero h1 { font-size: 1.35rem; }
+  .logo span { display: none; }
 }
